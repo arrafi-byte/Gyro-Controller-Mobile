@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0c14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Gyro Racing Wheel</title>
+  <link rel="stylesheet" href="/static/style.css?v=2.1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Start Screen Overlay (Required for Fullscreen, Wake Lock & Sensor permissions) -->
+  <div id="start-overlay" class="overlay">
+    <div class="start-card">
+      <div class="logo-badge">
+        <svg viewBox="0 0 24 24" class="wheel-icon" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v7M12 15v7M2 12h7M15 12h7"/>
+        </svg>
+      </div>
+      <h1 class="glow-title">GYRO RACING WHEEL</h1>
+      <p class="start-subtitle">Ultra Low-Latency Android Racing Wheel Controller</p>
+      
+      <div class="connection-tip">
+        <span class="tip-icon">⚡</span>
+        <span id="connection-mode-text">Recommended: USB Cable + ADB Reverse (http://localhost:8000)</span>
+      </div>
+
+      <!-- Live WebSocket Connection Status on Start Screen -->
+      <div id="start-status-pill" class="status-pill connecting" style="margin: 0 auto 1.25rem auto; width: fit-content;">
+        <span class="status-dot"></span>
+        <span id="start-status-label">CONNECTING TO PC...</span>
+      </div>
+
+      <button id="start-btn" class="btn-start">
+        <span class="btn-shine"></span>
+        <span class="btn-text">START ENGINE</span>
+      </button>
+
+      <div class="permission-note">
+        Tapping Start enables Fullscreen, Wake Lock, and Motion Sensors.
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Cockpit HUD (Hidden until started) -->
+  <main id="cockpit" class="cockpit-container">
+    <!-- Top HUD Navigation Bar -->
+    <header class="top-hud">
+      <div class="hud-left">
+        <div id="status-pill" class="status-pill disconnected">
+          <span class="status-dot"></span>
+          <span id="status-label">OFFLINE</span>
+        </div>
+        <div id="sensor-badge" class="hud-stat-badge">
+          <span class="stat-name">SENSOR</span>
+          <span id="sensor-status" class="stat-value">INIT</span>
+        </div>
+        <div id="rtt-badge" class="hud-stat-badge">
+          <span class="stat-name">PING</span>
+          <span id="rtt-value" class="stat-value">-- ms</span>
+        </div>
+        <div id="rate-badge" class="hud-stat-badge">
+          <span class="stat-name">HZ</span>
+          <span id="rate-value" class="stat-value">0</span>
+        </div>
+      </div>
+
+      <!-- Recenter & Horn / Test Button (Top-center, safe from thumbs) -->
+      <div class="hud-center">
+        <button id="recenter-btn" class="btn-recenter" title="Recenter Wheel (or press Ctrl+Alt+C / F9 on PC)">
+          <svg viewBox="0 0 24 24" class="recenter-icon" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+            <path d="M3 3v5h5"/>
+          </svg>
+          <span class="recenter-text">RECENTER</span>
+        </button>
+        <button id="horn-btn" class="btn-horn" title="Test Gamepad Button A (Horn)">
+          <span>HORN (A)</span>
+        </button>
+      </div>
+
+      <div class="hud-right">
+        <button id="fullscreen-btn" class="icon-btn" title="Toggle Fullscreen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+          </svg>
+        </button>
+        <button id="settings-btn" class="icon-btn" title="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Center Steering Gauge -->
+    <div class="steering-center-display">
+      <div class="wheel-gauge-container">
+        <!-- SVG Arc Gauge -->
+        <svg class="gauge-svg" viewBox="0 0 200 200">
+          <circle class="gauge-track" cx="100" cy="100" r="85"/>
+          <circle id="gauge-arc" class="gauge-fill" cx="100" cy="100" r="85"/>
+          <!-- Center tick -->
+          <line x1="100" y1="12" x2="100" y2="24" class="gauge-center-tick"/>
+        </svg>
+
+        <div id="virtual-wheel" class="virtual-wheel">
+          <div class="wheel-spoke spoke-left"></div>
+          <div class="wheel-spoke spoke-right"></div>
+          <div class="wheel-hub">
+            <span id="steer-degrees" class="angle-text">0.0°</span>
+            <span class="angle-unit">STEER</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fullscreen Touch Zones: Multi-touch pointer events -->
+    <div class="pedals-wrapper">
+      <!-- Left 50%: BRAKE -->
+      <div id="brake-zone" class="pedal-zone brake-zone" touch-action="none">
+        <div class="pedal-fill brake-fill" id="brake-fill"></div>
+        <div class="pedal-hud-content">
+          <div class="pedal-name">BRAKE</div>
+          <div id="brake-value" class="pedal-value">0%</div>
+          <div class="pedal-bar-container">
+            <div id="brake-meter" class="pedal-meter"></div>
+          </div>
+          <div class="pedal-hint">LEFT THUMB</div>
+        </div>
+      </div>
+
+      <!-- Right 50%: THROTTLE -->
+      <div id="throttle-zone" class="pedal-zone throttle-zone" touch-action="none">
+        <div class="pedal-fill throttle-fill" id="throttle-fill"></div>
+        <div class="pedal-hud-content">
+          <div class="pedal-name">THROTTLE</div>
+          <div id="throttle-value" class="pedal-value">0%</div>
+          <div class="pedal-bar-container">
+            <div id="throttle-meter" class="pedal-meter"></div>
+          </div>
+          <div class="pedal-hint">RIGHT THUMB</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Settings Modal (Glassmorphism overlay) -->
+  <div id="settings-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>STEERING & PEDAL SETTINGS</h2>
+        <button id="close-settings-btn" class="icon-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Max Steering Angle -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="cfg-max-angle">Max Steering Angle</label>
+            <span class="setting-desc">Tilt angle for full lock (30° - 180°)</span>
+          </div>
+          <div class="setting-control">
+            <input type="range" id="cfg-max-angle" min="30" max="180" step="5" value="90">
+            <span id="val-max-angle" class="cfg-val">90°</span>
+          </div>
+        </div>
+
+        <!-- Deadzone -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="cfg-deadzone">Steering Deadzone</label>
+            <span class="setting-desc">Center zone with smooth rescaling</span>
+          </div>
+          <div class="setting-control">
+            <input type="range" id="cfg-deadzone" min="0" max="0.15" step="0.005" value="0.02">
+            <span id="val-deadzone" class="cfg-val">2.0%</span>
+          </div>
+        </div>
+
+        <!-- Gamma Curve -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="cfg-gamma">Non-Linear Gamma</label>
+            <span class="setting-desc">1.0 = linear; >1 = finer control near center</span>
+          </div>
+          <div class="setting-control">
+            <input type="range" id="cfg-gamma" min="1.0" max="3.0" step="0.05" value="1.0">
+            <span id="val-gamma" class="cfg-val">1.00</span>
+          </div>
+        </div>
+
+        <!-- Inverse Deadzone -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="cfg-inv-deadzone">Inverse Deadzone</label>
+            <span class="setting-desc">Compensates built-in game deadzone</span>
+          </div>
+          <div class="setting-control">
+            <input type="range" id="cfg-inv-deadzone" min="0" max="0.30" step="0.01" value="0.0">
+            <span id="val-inv-deadzone" class="cfg-val">0.0%</span>
+          </div>
+        </div>
+
+        <!-- One Euro Filter Min Cutoff -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="cfg-filter-cutoff">Filter Smoothness (Min Cutoff)</label>
+            <span class="setting-desc">Lower = smoother; Higher = faster reaction</span>
+          </div>
+          <div class="setting-control">
+            <input type="range" id="cfg-filter-cutoff" min="0.2" max="5.0" step="0.1" value="1.0">
+            <span id="val-filter-cutoff" class="cfg-val">1.0 Hz</span>
+          </div>
+        </div>
+
+        <!-- One Euro Filter Beta -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="cfg-filter-beta">Filter Speed (Beta)</label>
+            <span class="setting-desc">Higher = less lag during rapid turns</span>
+          </div>
+          <div class="setting-control">
+            <input type="range" id="cfg-filter-beta" min="0.001" max="0.05" step="0.001" value="0.007">
+            <span id="val-filter-beta" class="cfg-val">0.007</span>
+          </div>
+        </div>
+
+        <!-- Filter Enable Toggle -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="cfg-filter-enabled">One Euro Filter</label>
+            <span class="setting-desc">Enable low-latency hand tremor reduction</span>
+          </div>
+          <div class="setting-control">
+            <input type="checkbox" id="cfg-filter-enabled" class="cfg-toggle" checked>
+          </div>
+        </div>
+
+        <!-- Pedal Mode Selection -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <label>Pedal Response Mode</label>
+            <span class="setting-desc">Progressive (vertical slide) or Binary with smooth ramp</span>
+          </div>
+          <div class="setting-control radio-group">
+            <label class="radio-label">
+              <input type="radio" name="pedal-mode" value="progressive" checked> Progressive
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="pedal-mode" value="binary"> Binary Ramp (120ms)
+            </label>
+          </div>
+        </div>
+
+        <!-- Sensor Source Selection -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <label>Sensor Source</label>
+            <span class="setting-desc">Gravity Vector (Gimbal-lock free) or RelativeOrientation</span>
+          </div>
+          <div class="setting-control radio-group">
+            <label class="radio-label">
+              <input type="radio" name="sensor-source" value="gravity" checked> Gravity Vector
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="sensor-source" value="relative"> Relative Sensor
+            </label>
+          </div>
+        </div>
+
+        <!-- Haptics toggle -->
+        <div class="setting-row">
+          <div class="setting-info">
+            <label for="cfg-haptics">Haptic Vibration</label>
+            <span class="setting-desc">Vibrate on pedal touch</span>
+          </div>
+          <div class="setting-control">
+            <input type="checkbox" id="cfg-haptics" class="cfg-toggle" checked>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button id="reset-defaults-btn" class="btn-secondary">Reset Defaults</button>
+        <button id="save-settings-btn" class="btn-primary">Apply & Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js?v=2.1"></script>
+</body>
+</html>

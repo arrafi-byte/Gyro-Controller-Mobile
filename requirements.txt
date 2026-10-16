@@ -1,0 +1,5 @@
+pyvjoystick>=1.2.0
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+websockets>=11.0
+qrcode[pil]>=7.4
