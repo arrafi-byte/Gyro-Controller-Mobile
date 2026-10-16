@@ -149,3 +149,21 @@ Individual test modules:
 - [x] **Milestone 4:** Gravity Sensor, Signal Pipeline, & Recenter (gimbal-lock free atan2, One Euro filter, PC hotkeys)
 - [x] **Milestone 5:** Fullscreen Multi-Touch Pedals & Immersive UI (Pointer Events, progressive/binary ramp, haptics)
 - [x] **Milestone 6:** Real-Time Settings, Failsafe, & Latency (dynamic sync, disconnect failsafe, ping/pong RTT)
+
+---
+
+## 🔮 Roadmap & Upcoming Features (Next Update)
+
+- [ ] **Multi-Device Support (Player 1 & Player 2):**
+  - Simultaneous multi-controller allocation via ViGEmBus (up to 4 independent virtual gamepads).
+  - Dedicated input state, signal pipeline, and recenter offset per connected device.
+  - Automatic slot assignment (first device = Player 1, second device = Player 2).
+- [ ] **Full iOS / Safari Compatibility:**
+  - Dedicated iOS `DeviceMotionEvent.requestPermission()` handling on first touch.
+  - Standalone Progressive Web App (PWA) manifest support for full-bleed display on iPhone.
+  - Streamlined HTTPS onboarding for Safari Secure Context motion sensor requirements.
+- [ ] **Progressive Pedal Sensitivity & Curve Calibration:**
+  - In-app slider to configure pedal throw distance (travel pixels for 100% brake/throttle).
+  - Non-linear progressive response curves (linear, exponential, or progressive brake resistance).
+  - Adjustable minimum initial touch bite point (0% - 25%).
+
